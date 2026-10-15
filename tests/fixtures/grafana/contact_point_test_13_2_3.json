@@ -1,0 +1,45 @@
+{
+  "alerts": [
+    {
+      "annotations": {
+        "summary": "Notification test"
+      },
+      "dashboardURL": "",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "fingerprint": "57c6d9296de2ad39",
+      "generatorURL": "",
+      "labels": {
+        "alertname": "TestAlert",
+        "instance": "Grafana"
+      },
+      "panelURL": "",
+      "silenceURL": "http://localhost:3000/alerting/silence/new?alertmanager=grafana&matcher=alertname%3DTestAlert&matcher=instance%3DGrafana",
+      "startsAt": "2026-10-12T23:31:49.279717741Z",
+      "status": "firing",
+      "valueString": "[ metric='foo' labels={instance=bar} value=10 ]",
+      "values": null
+    }
+  ],
+  "appVersion": "13.2.3",
+  "commonAnnotations": {
+    "summary": "Notification test"
+  },
+  "commonLabels": {
+    "alertname": "TestAlert",
+    "instance": "Grafana"
+  },
+  "externalURL": "http://localhost:3000/",
+  "groupKey": "webhook-57c6d9296de2ad39-1791847909",
+  "groupLabels": {
+    "alertname": "TestAlert",
+    "instance": "Grafana"
+  },
+  "message": "**Firing**\n\nValue: [no value]\nLabels:\n - alertname = TestAlert\n - instance = Grafana\nAnnotations:\n - summary = Notification test\nSilence: http://localhost:3000/alerting/silence/new?alertmanager=grafana&matcher=alertname%3DTestAlert&matcher=instance%3DGrafana\n",
+  "orgId": 1,
+  "receiver": "webhook",
+  "state": "alerting",
+  "status": "firing",
+  "title": "[FIRING:1] TestAlert Grafana ",
+  "truncatedAlerts": 0,
+  "version": "1"
+}

@@ -1,0 +1,17 @@
+{
+  "receiver": "hawkdive-local",
+  "status": "firing",
+  "orgId": 1,
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "HighErrorRate",
+        "service": "sample",
+        "environment": "local"
+      },
+      "startsAt": "2026-10-11T12:00:00Z",
+      "fingerprint": "sample-errors"
+    }
+  ]
+}

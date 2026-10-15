@@ -1,0 +1,56 @@
+{
+  "receiver": "hawkdive-local",
+  "status": "firing",
+  "orgId": 1,
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "HighErrorRate",
+        "service": "sample",
+        "environment": "local"
+      },
+      "annotations": {
+        "summary": "Sample service error rate is high"
+      },
+      "startsAt": "2026-10-11T12:00:00Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://localhost:3000/alerting/sample-errors/view",
+      "fingerprint": "sample-errors",
+      "values": {
+        "A": 12
+      }
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "HighLatency",
+        "service": "sample"
+      },
+      "annotations": {
+        "summary": "Sample service error rate is high"
+      },
+      "startsAt": "2026-10-11T12:00:00Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://localhost:3000/alerting/sample-errors/view",
+      "fingerprint": "sample-latency",
+      "values": {
+        "A": 12
+      }
+    }
+  ],
+  "groupLabels": {
+    "alertname": "HighErrorRate"
+  },
+  "commonLabels": {
+    "service": "sample"
+  },
+  "commonAnnotations": {},
+  "externalURL": "http://localhost:3000",
+  "version": "1",
+  "groupKey": "{}:{alertname=HighErrorRate}",
+  "truncatedAlerts": 0,
+  "title": "Sample service error rate is high",
+  "state": "alerting",
+  "message": "A local test alert."
+}

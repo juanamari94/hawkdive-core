@@ -1,0 +1,55 @@
+{
+  "receiver": "hawkdive-local",
+  "status": "resolved",
+  "alerts": [
+    {
+      "status": "resolved",
+      "labels": {
+        "alertname": "Hawkdive local delivery verification",
+        "environment": "local",
+        "grafana_folder": "Hawkdive verification",
+        "hawkdive_verification": "true",
+        "service": "local-verification"
+      },
+      "annotations": {
+        "grafana_state_reason": "Updated",
+        "summary": "Controlled local webhook delivery verification"
+      },
+      "startsAt": "2026-10-13T00:50:40Z",
+      "endsAt": "2026-10-13T00:52:20.012128224Z",
+      "generatorURL": "http://localhost:3000/alerting/grafana/hawkdive-local-verification/view?orgId=1",
+      "fingerprint": "5501cf4850fabefa",
+      "silenceURL": "http://localhost:3000/alerting/silence/new?alertmanager=grafana&matcher=__alert_rule_uid__%3Dhawkdive-local-verification&matcher=environment%3Dlocal&matcher=hawkdive_verification%3Dtrue&matcher=service%3Dlocal-verification&orgId=1",
+      "dashboardURL": "",
+      "panelURL": "",
+      "ruleUID": "hawkdive-local-verification",
+      "values": null,
+      "valueString": "[ var='A' labels={} type='math' value=1 ]",
+      "orgId": 1
+    }
+  ],
+  "groupLabels": {
+    "alertname": "Hawkdive local delivery verification",
+    "grafana_folder": "Hawkdive verification"
+  },
+  "commonLabels": {
+    "alertname": "Hawkdive local delivery verification",
+    "environment": "local",
+    "grafana_folder": "Hawkdive verification",
+    "hawkdive_verification": "true",
+    "service": "local-verification"
+  },
+  "commonAnnotations": {
+    "grafana_state_reason": "Updated",
+    "summary": "Controlled local webhook delivery verification"
+  },
+  "externalURL": "http://localhost:3000/",
+  "appVersion": "13.2.3",
+  "version": "1",
+  "groupKey": "{}/{hawkdive_verification=\"true\"}:{alertname=\"Hawkdive local delivery verification\", grafana_folder=\"Hawkdive verification\"}",
+  "truncatedAlerts": 0,
+  "orgId": 1,
+  "title": "[RESOLVED] Hawkdive local delivery verification Hawkdive verification (local true local-verification)",
+  "state": "ok",
+  "message": "**Resolved**\n\nValue: [no value]\nLabels:\n - alertname = Hawkdive local delivery verification\n - environment = local\n - grafana_folder = Hawkdive verification\n - hawkdive_verification = true\n - service = local-verification\nAnnotations:\n - grafana_state_reason = Updated\n - summary = Controlled local webhook delivery verification\nSource: http://localhost:3000/alerting/grafana/hawkdive-local-verification/view?orgId=1\nSilence: http://localhost:3000/alerting/silence/new?alertmanager=grafana&matcher=__alert_rule_uid__%3Dhawkdive-local-verification&matcher=environment%3Dlocal&matcher=hawkdive_verification%3Dtrue&matcher=service%3Dlocal-verification&orgId=1\n"
+}

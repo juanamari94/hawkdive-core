@@ -1,0 +1,14 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: hawkdive-local
+    receivers:
+      - uid: hawkdive-local-webhook
+        type: webhook
+        disableResolveMessage: false
+        settings:
+          url: http://host.docker.internal:8000/webhooks/grafana/local-grafana
+          httpMethod: POST
+          authorization_scheme: Bearer
+          authorization_credentials: $HAWKDIVE_WEBHOOK_TOKEN

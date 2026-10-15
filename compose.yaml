@@ -1,0 +1,21 @@
+name: hawkdive-local
+
+services:
+  grafana:
+    image: grafana/grafana:13.2.3
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: local-grafana-password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      HAWKDIVE_WEBHOOK_TOKEN: ${HAWKDIVE_WEBHOOK_TOKEN:-local-dev-token}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./local/grafana/provisioning:/etc/grafana/provisioning:ro
+
+volumes:
+  grafana-data:
