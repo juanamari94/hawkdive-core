@@ -23,7 +23,7 @@ The global investigation window defaults to one hour from investigation creation
 New occurrences within that window link to the existing investigation.
 Pending or running investigations also receive related occurrences after the window expires.
 Repeated notifications do not extend the window. Window expiry alone does not start another investigation.
-Worker launch is explicit through the API. No agent or automatic dispatch loop runs yet.
+Worker launch is explicit through the API. The LangGraph agent is opt-in; no automatic dispatch loop runs yet.
 
 ## Setup
 
@@ -114,6 +114,7 @@ UUIDs are strings in JSON and text in SQLite; application records expose UUID va
 ## Worker wrapper
 
 See [local/worker-wrapper.md](local/worker-wrapper.md) for process configuration, dispatch, and the worker protocol.
+For the OpenRouter/Grafana Cloud agent and Docker sandbox, see [local/agent.md](local/agent.md) and [ADR 0002](adrs/0002-langgraph-agent-and-shell-sandbox.md).
 The wrapper is independent of Grafana and LangGraph. Grafana is the first intake adapter.
 The adapter supplies a signature containing integration, source, organization scope, and alert fingerprint.
 
@@ -135,8 +136,9 @@ After a crash, unresolved claims require manual review. Startup reconciliation r
 - HAWKDIVE_WEBHOOK_TOKEN: bearer token; default local-dev-token.
 - HAWKDIVE_INVESTIGATION_WINDOW_SECONDS: positive global investigation window; default 3600. Changes apply to new investigations.
 - HAWKDIVE_WORKER_COMMAND: JSON array of executable and arguments; unset by default. Dispatch returns HTTP 409 when unset.
+- HAWKDIVE_AGENT_ENABLED: set `true` to use the built-in LangGraph worker when no custom command is configured.
 
-When no worker command is configured, the application supplies `NullBackend` to the dispatcher.
+When neither the built-in agent nor a custom worker command is configured, the application supplies `NullBackend` to the dispatcher.
 It reports disabled execution before an attempt is created. Intake and investigation storage stay available.
 
 The default token is for local development. Set your own token before exposing the receiver.
@@ -144,6 +146,10 @@ Set the same token for the sender and receiver. An empty token is rejected.
 The proof of concept uses one shared token; it does not provide tenant access control.
 
 ## Tests and scope
+
+Run `uv run ruff check .` and `uv run pytest -q` before submitting changes.
+Ruff checks import order, requires module-level imports, and rejects print statements outside tests.
+Diagnostics use logging. Worker stdout contains only JSON protocol records.
 
 Tests exercise observable application behavior through HTTP. They use a temporary database per test.
 Migration tests cover initial setup, repeated upgrades, and startup checks for missing migrations.
@@ -158,7 +164,9 @@ They preserve the rule UID, expression values, labels, timestamps, fingerprint, 
 Authentication supports bearer tokens only. Custom payload templates and HMAC are deferred.
 Duplicate notifications are safe to retry. Investigations, attempts, and outputs survive restarts.
 Tests use a minimal process worker that produces fixed output. It does not investigate alerts.
-The LangGraph agent, telemetry access, memory lookup, and local Slack/ticket mocks are later tasks.
-Automatic retries, startup reconciliation, per-signature window overrides, and active cancellation APIs remain deferred.
+The LangGraph worker implements separate Grafana Cloud MCP and Docker shell paths, plus structured record emission.
+Live model/Grafana authentication and Docker behavior still require environment-specific verification.
+Memory lookup and local Slack/ticket mocks are later tasks.
+Automatic retries, startup reconciliation, OAuth sign-in/refresh, per-signature window overrides, and active cancellation APIs remain deferred.
 
 Reference: https://grafana.com/docs/grafana/latest/alerting/configure-notifications/manage-contact-points/integrations/webhook-notifier/

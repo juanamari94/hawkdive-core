@@ -1,16 +1,24 @@
+import asyncio
+import json
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from uuid import UUID, uuid4
 
 import pytest
 from alembic import command
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
+from test_webhooks import AUTH, payload, read, send
 
+from hawkdive.agent.config import AgentConfig
 from hawkdive.app import create_app
 from hawkdive.database import migration_config
-from test_webhooks import AUTH, payload, read, send
+from hawkdive.investigation_store import InvestigationConflict
+from hawkdive.investigations import AlertTrigger, Finding, Outcome, WorkerInput
+from hawkdive.store import Store
 
 WORKER = Path(__file__).parent / 'fixtures' / 'worker.py'
 
@@ -243,12 +251,6 @@ def test_two_dispatchers_cannot_run_workers_for_the_same_signature(setup):
 
 
 def test_finished_attempt_cannot_append_outputs_after_a_retry(setup):
-    import asyncio
-    import json
-    from uuid import uuid4
-    from hawkdive.investigations import AlertTrigger, WorkerInput
-    from hawkdive.investigation_store import InvestigationConflict
-    from hawkdive.store import Store
 
     make, _, directory = setup
     with make('failure') as client:
@@ -278,11 +280,6 @@ def test_finished_attempt_cannot_append_outputs_after_a_retry(setup):
 
 
 def test_store_returns_validated_records_with_uuid_identity(setup):
-    import asyncio
-    from uuid import UUID
-    from pydantic import BaseModel
-    from hawkdive.investigations import Finding, Outcome
-    from hawkdive.store import Store
 
     make, _, directory = setup
     with make() as client:
@@ -324,3 +321,23 @@ def test_disabled_dispatch_keeps_intake_enabled_without_creating_an_attempt(setu
         assert result['status'] == 'PENDING'
         assert result['attempts'] == []
         assert result['outputs'] == []
+
+
+def test_agent_graph_process_receives_configuration_and_persists_supported_results(setup):
+
+    config = AgentConfig(openrouter_api_key='model-secret', grafana_access_token='mcp-secret',
+                         grafana_url='https://example.grafana.net')
+    with TestClient(create_app(
+        db_path=setup[2] / 'alerts.sqlite3', webhook_token='test-token', agent_config=config,
+        worker_command=[sys.executable, str(WORKER.with_name('agent_worker.py'))],
+    )) as client:
+        send(client, payload())
+        identifier = read(client, 'investigations')[0]['id']
+        assert dispatch(client, identifier).status_code == 202
+        result = finished(client, identifier)
+        assert result['status'] == 'COMPLETED'
+        assert [entry['kind'] for entry in result['outputs']] == ['EVIDENCE', 'OBSERVATION', 'FINDING', 'OUTCOME']
+        assert result['outputs'][-1]['content']['finding_ids'] == [result['outputs'][-2]['id']]
+        saved = json.dumps(result)
+        assert 'model-secret' not in saved
+        assert 'mcp-secret' not in saved

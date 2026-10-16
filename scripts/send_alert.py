@@ -2,13 +2,17 @@
 
 import argparse
 import json
+import logging
 import os
 from pathlib import Path
 
 import httpx
 
+logger = logging.getLogger(__name__)
+
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s %(name)s: %(message)s')
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("fixture", type=Path)
     parser.add_argument("--url", default="http://127.0.0.1:8000/webhooks/grafana/local")
@@ -23,7 +27,7 @@ def main() -> None:
             response = client.post(
                 args.url, json=payload, headers={"Authorization": f"Bearer {token}"}
             )
-            print(response.status_code, response.text)
+            logger.info('HTTP %s: %s', response.status_code, response.text)
             response.raise_for_status()
 
 

@@ -4,8 +4,8 @@ import json
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision = '0002'
 down_revision = '0001'

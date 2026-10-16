@@ -1,6 +1,7 @@
-import os
 import json
+import os
 import secrets
+import sys
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -8,26 +9,43 @@ from pathlib import Path
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException
-from sqlalchemy.exc import SQLAlchemyError
 from pydantic import JsonValue
+from sqlalchemy.exc import SQLAlchemyError
 
-from hawkdive.models import GrafanaNotification
+from hawkdive.agent.config import AgentConfig
+from hawkdive.agent.shell import DockerSandbox
 from hawkdive.dispatcher import Dispatcher
 from hawkdive.execution import ExecutionDisabled, NullBackend, ProcessBackend
 from hawkdive.investigation_store import InvestigationConflict
-from hawkdive.investigations import InvestigationRecord
+from hawkdive.investigations import InvestigationRecord, WorkerInput
+from hawkdive.models import GrafanaNotification
 from hawkdive.store import Store
 
 
 def create_app(*, db_path: str | Path | None = None, webhook_token: str | None = None,
                window_seconds: int | None = None, clock: Callable[[], datetime] | None = None,
-               worker_command: list[str] | None = None) -> FastAPI:
+               worker_command: list[str] | None = None, agent_config: AgentConfig | None = None) -> FastAPI:
     window_seconds = window_seconds if window_seconds is not None else int(os.getenv('HAWKDIVE_INVESTIGATION_WINDOW_SECONDS', '3600'))
     store = Store(Path(db_path or os.getenv("HAWKDIVE_DB_PATH", "hawkdive.sqlite3")),
                   window_seconds=window_seconds, clock=clock)
     if worker_command is None and os.getenv('HAWKDIVE_WORKER_COMMAND'):
         worker_command = json.loads(os.environ['HAWKDIVE_WORKER_COMMAND'])
-    dispatcher = Dispatcher(store.investigations, ProcessBackend(worker_command) if worker_command else NullBackend())
+    if agent_config is None and os.getenv('HAWKDIVE_AGENT_ENABLED', '').lower() == 'true':
+        agent_config = AgentConfig.from_environment()
+    agent_worker = agent_config is not None and worker_command is None
+    if agent_config is not None and worker_command is None:
+        worker_command = [sys.executable, '-m', 'hawkdive.agent']
+    environment = agent_config.worker_environment() if agent_config else None
+
+    async def cleanup_sandbox(request: WorkerInput) -> None:
+        assert agent_config is not None
+        sandbox = DockerSandbox(request.attempt_id, image=agent_config.sandbox_image)
+        await sandbox.remove()
+
+    dispatcher = Dispatcher(store.investigations,
+                            ProcessBackend(worker_command, environment=environment,
+                                           cleanup=cleanup_sandbox if agent_worker else None)
+                            if worker_command else NullBackend())
     token = webhook_token if webhook_token is not None else os.getenv(
         "HAWKDIVE_WEBHOOK_TOKEN", "local-dev-token"
     )

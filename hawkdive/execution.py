@@ -1,10 +1,22 @@
 """Local process implementation of the worker execution boundary."""
 
 import asyncio
-from collections.abc import AsyncIterator
+import os
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Protocol
 
 from hawkdive.investigations import WorkerInput
+
+
+def process_environment(overrides: dict[str, str] | None = None) -> dict[str, str]:
+    """Pass OS runtime settings and explicitly supplied execution configuration."""
+    keys = ('PATH', 'SystemRoot', 'SYSTEMROOT', 'WINDIR', 'TEMP', 'TMP', 'COMSPEC', 'PATHEXT',
+            'SYSTEMDRIVE', 'LANG', 'LC_ALL', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'REQUESTS_CA_BUNDLE')
+    environment = {key: os.environ[key] for key in keys if key in os.environ}
+    environment.update({'PYTHONUTF8': '1', 'PYTHONUNBUFFERED': '1',
+                        'LANGSMITH_TRACING': 'false', 'LANGCHAIN_TRACING_V2': 'false'})
+    environment.update(overrides or {})
+    return environment
 
 
 class Execution(Protocol):
@@ -35,10 +47,12 @@ class NullBackend:
 
 
 class ProcessExecution:
-    def __init__(self, process: asyncio.subprocess.Process) -> None:
+    def __init__(self, process: asyncio.subprocess.Process, *, cleanup: Callable[[], Awaitable[None]] | None = None) -> None:
         self.process = process
         self.reference = f'process:{process.pid}'
         self.stderr = asyncio.create_task(self._read_stderr())
+        self.cleanup = cleanup
+        self.cleanup_task: asyncio.Task[None] | None = None
 
     async def _read_stderr(self) -> str:
         # Drain continuously so stderr cannot block the child. Keep only a short diagnostic.
@@ -54,6 +68,10 @@ class ProcessExecution:
     async def wait(self) -> int:
         code = await self.process.wait()
         await self.stderr
+        if self.cleanup is not None:
+            if self.cleanup_task is None:
+                self.cleanup_task = asyncio.create_task(self.cleanup())
+            await asyncio.shield(self.cleanup_task)
         return code
 
     async def stop(self) -> int:
@@ -69,19 +87,22 @@ class ProcessExecution:
                 pass
         try:
             try:
-                return await asyncio.wait_for(self.wait(), timeout=5)
+                await asyncio.wait_for(self.process.wait(), timeout=5)
             except TimeoutError:
                 self.process.kill()
-                return await self.wait()
+            return await self.wait()
         finally:
             await drain
 
 
 class ProcessBackend:
-    def __init__(self, command: list[str]) -> None:
+    def __init__(self, command: list[str], *, environment: dict[str, str] | None = None,
+                 cleanup: Callable[[WorkerInput], Awaitable[None]] | None = None) -> None:
         if not isinstance(command, list) or not command or not all(isinstance(part, str) and part for part in command):
             raise ValueError('Worker command must be a nonempty list of arguments')
         self.command = command
+        self.environment = process_environment(environment)
+        self.cleanup = cleanup
 
     def check_available(self) -> None:
         return None
@@ -90,8 +111,15 @@ class ProcessBackend:
         process = await asyncio.create_subprocess_exec(
             *self.command, stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            env=self.environment,
         )
-        execution = ProcessExecution(process)
+        cleanup_handler = self.cleanup
+
+        async def cleanup_execution() -> None:
+            if cleanup_handler is not None:
+                await cleanup_handler(request)
+
+        execution = ProcessExecution(process, cleanup=cleanup_execution if cleanup_handler else None)
         try:
             process.stdin.write((request.model_dump_json() + '\n').encode('utf-8'))
             await process.stdin.drain()

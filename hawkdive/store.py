@@ -7,11 +7,11 @@ from typing import Any
 
 from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
+from pydantic import JsonValue
 from sqlalchemy import event, select, text
 from sqlalchemy.engine.interfaces import DBAPIConnection
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import ConnectionPoolEntry
-from pydantic import JsonValue
 
 from hawkdive.database import database_url, migration_config
 from hawkdive.investigation_store import InvestigationStore

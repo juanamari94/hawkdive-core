@@ -4,7 +4,14 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from hawkdive.investigations import Evidence, Finding, Observation, Outcome, WorkerInput, WorkerOutput
+from hawkdive.investigations import (
+    Evidence,
+    Finding,
+    Observation,
+    Outcome,
+    WorkerInput,
+    WorkerOutput,
+)
 
 
 def test_evidence_has_a_text_explanation():

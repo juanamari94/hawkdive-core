@@ -8,9 +8,20 @@ from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from hawkdive.investigations import (
-    AlertTrigger, AttemptRecord, InvestigationRecord, OutputKind, OutputRecord, WorkerInput, WorkerOutput,
+    AlertTrigger,
+    AttemptRecord,
+    InvestigationRecord,
+    OutputKind,
+    OutputRecord,
+    WorkerInput,
+    WorkerOutput,
 )
-from hawkdive.tables import Attempt, Investigation, InvestigationOccurrence, InvestigationOutput
+from hawkdive.tables import (
+    Attempt,
+    Investigation,
+    InvestigationOccurrence,
+    InvestigationOutput,
+)
 
 
 class InvestigationConflict(ValueError):

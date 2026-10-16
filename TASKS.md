@@ -107,11 +107,15 @@ Startup reconciliation, automatic dispatch scheduling, automatic retries, and di
 
 ## HD-004: investigate through Grafana MCP
 
-Status: planned
+Status: agent runtime implemented; live verification pending.
 Dependencies: HD-001, HD-003
 
 Implemented worker wrapper and investigation contracts: [ADR 0001](adrs/0001-investigation-worker-wrapper.md).
-Reconciliation and the agent implementation remain deferred.
+Agent decisions are recorded in [ADR 0002](adrs/0002-langgraph-agent-and-shell-sandbox.md).
+The runtime uses OpenRouter GLM 5.3 and Grafana Cloud hosted MCP, with a Docker sandbox per attempt.
+Local tests cover graph routing, output references, credential boundaries, and HTTP dispatch through a graph worker process.
+The real sandbox test is opt-in. Docker and provider credentials were unavailable during implementation.
+OAuth sign-in/refresh, startup reconciliation, and memory lookup remain deferred.
 
 Keep investigation records separate from alert occurrences.
 One occurrence covers a continuous firing period. Repeated notifications for that period do not create another job.
@@ -122,7 +126,8 @@ Support sequential attempts for an investigation, with at most one active attemp
 Use earlier investigations as history for recurring alerts.
 Grafana is the first integration; the wrapper uses mapped alert signatures for other sources too.
 
-Connect the open-source MCP server with read permissions and an explicit tool allowlist. First prove a relevant metric query without a model. Then add a bounded agent that collects evidence and tests hypotheses.
+Connect Grafana Cloud hosted MCP with an existing OAuth access token and an explicit read-tool allowlist.
+Verify a relevant live metric query, then verify GLM 5.3 gathering evidence through both tool nodes.
 
 Acceptance:
 - Retrieve relevant metrics for the alert time window.

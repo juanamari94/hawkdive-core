@@ -2,9 +2,9 @@
 
 Date: 2026-10-13
 
-Last updated: 2026-10-14
+Last updated: 2026-10-15
 
-Status: Accepted. The local wrapper was implemented on 2026-10-14. The agent and reconciliation remain deferred.
+Status: Accepted. The local wrapper was implemented on 2026-10-14. Agent design and verification are covered by ADR 0002; reconciliation remains deferred.
 
 ## Context
 
@@ -24,7 +24,7 @@ An investigation explains an occurrence using evidence.
 Alert resolution does not establish the cause or prove that a defect is fixed.
 Earlier investigations can provide context for a recurring alert.
 
-The future worker will be a LangGraph agent with reasoning enabled.
+The worker uses a LangGraph agent with reasoning enabled, detailed in [ADR 0002](0002-langgraph-agent-and-shell-sandbox.md).
 Its implementation is outside this decision.
 The application needs a wrapper that can dispatch workers without depending on LangGraph or a specific execution platform.
 
@@ -280,7 +280,7 @@ Migration templates also generate annotated functions. This does not imply a com
 
 ## Verification
 
-The current application suite contains 53 passing tests.
+The wrapper verification suite passed 53 tests before the agent tests were added.
 Tests cover migration preservation, investigation windows, atomic eligibility, and overlapping dispatch from two application instances.
 Process tests cover intermediate output, valid completion, failures, invalid evidence links, explicit retries, and rejection of late results.
 

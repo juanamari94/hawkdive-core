@@ -1,3 +1,4 @@
+import json
 import os
 import sqlite3
 import subprocess
@@ -5,8 +6,10 @@ import sys
 from pathlib import Path
 
 import pytest
-
+from alembic import command
 from test_webhooks import client_for, payload, read, send
+
+from hawkdive.database import migration_config
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -36,9 +39,6 @@ def test_initial_migration_creates_current_schema_and_can_repeat(tmp_path):
 
 
 def test_upgrade_preserves_alert_history_and_groups_legacy_jobs(tmp_path, monkeypatch):
-    from alembic import command
-    from hawkdive.database import migration_config
-    import json
 
     path = tmp_path / 'legacy.sqlite3'
     monkeypatch.setenv('HAWKDIVE_DB_PATH', str(path))

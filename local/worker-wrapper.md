@@ -1,7 +1,8 @@
 # Local worker wrapper
 
 The application dispatches a separate process and stores its structured outputs.
-It does not include a LangGraph agent yet.
+The opt-in LangGraph agent is documented in [agent.md](agent.md).
+This guide uses the deterministic test process to verify the wrapper without model or Grafana credentials.
 The worker under `tests/fixtures/worker.py` exists only to verify the wrapper contract.
 Its results are fixed test data, not real investigation findings.
 
