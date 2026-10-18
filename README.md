@@ -42,6 +42,9 @@ uv manages the .venv directory and dependencies. Commit uv.lock with dependency 
 
 ## Local Grafana verification
 
+For an existing Grafana instance, follow [Connect Grafana to Hawkdive](docs/grafana-contact-point.md).
+The guide covers adding the webhook to an existing contact point, authentication, routing, and delivery checks.
+
 See [local/README.md](local/README.md) for the minimal Docker Compose setup and test notification steps.
 Grafana 13.2.3 delivered a real contact-point test notification to Hawkdive on October 12, 2026.
 Hawkdive stored its payload, alert evidence, and one pending job.
@@ -164,7 +167,8 @@ They preserve the rule UID, expression values, labels, timestamps, fingerprint, 
 Authentication supports bearer tokens only. Custom payload templates and HMAC are deferred.
 Duplicate notifications are safe to retry. Investigations, attempts, and outputs survive restarts.
 Tests use a minimal process worker that produces fixed output. It does not investigate alerts.
-The LangGraph worker implements separate Grafana Cloud MCP and Docker shell paths, plus structured record emission.
+The LangGraph worker implements separate Grafana MCP and Docker shell paths, plus structured record emission.
+Run Grafana's official local MCP server against your Cloud stack using [the agent setup guide](local/agent.md).
 Live model/Grafana authentication and Docker behavior still require environment-specific verification.
 Memory lookup and local Slack/ticket mocks are later tasks.
 Automatic retries, startup reconciliation, OAuth sign-in/refresh, per-signature window overrides, and active cancellation APIs remain deferred.

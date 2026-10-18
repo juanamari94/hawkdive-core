@@ -2,9 +2,9 @@
 
 Date: 2026-10-14
 
-Last updated: 2026-10-15
+Last updated: 2026-10-18
 
-Status: Accepted. Local graph and process integration tests pass. Live provider and Docker verification remain pending.
+Status: Accepted. Local graph, process tests, and live Grafana MCP connectivity pass. Live model and sandbox verification remain pending.
 
 ## Context
 
@@ -25,7 +25,8 @@ flowchart TD
     O[Orchestrator: claim attempt] --> W[Worker process]
     W --> A[Agent: GLM 5.3 through OpenRouter]
     A -->|Telemetry calls| G[GrafanaMcpToolNode]
-    G --> C[Grafana Cloud hosted MCP]
+    G --> C[Official local Grafana MCP server]
+    C --> CLOUD[Grafana Cloud stack]
     C --> G
     G -->|Tool results| A
     A -->|Commands| S[ShellNode]
@@ -60,19 +61,27 @@ Defaults limit an attempt to 20 model calls and 300 seconds of investigation run
 Each model request has a 60-second timeout and a 32,768-token output ceiling.
 Automatic model-request retries are disabled in this initial implementation.
 
-### Grafana Cloud MCP
+### Local Grafana MCP server
 
-Connect to `https://mcp.grafana.com/mcp` through Streamable HTTP.
-Pass the configured stack through `X-Grafana-URL` and authenticate with an existing OAuth access token.
+Run the official `grafana/mcp-grafana:2.0.2` image using `compose.mcp.yaml`.
+Connect to `http://127.0.0.1:8001/mcp` through Streamable HTTP.
+Configure the Cloud stack URL and service-account token in the MCP server environment.
+Use a separate bearer token to authenticate Hawkdive to the MCP server.
+Bind the published port to localhost and explicitly allow the host names used by the local client.
+The worker does not send a Grafana URL override or use the service-account token as MCP caller authentication.
 Use LangChain's `MCPAdapter` to discover and adapt the server's tools.
-Expose an explicit read-tool allowlist for datasource discovery, dashboards, annotations, and Prometheus queries.
-Do not expose write tools or raw SQL tools to the model.
-The allowlist is defined in `hawkdive/agent/grafana.py`.
+Expose all tools advertised by the MCP server, including Loki tools, without filtering tool names.
+Grafana credentials and permissions control which operations the server authorizes.
+Configure read-only service-account access for the initial investigation agent.
+The investigation prompt instructs the agent not to make production changes; Grafana permissions enforce access restrictions.
+This replaces the initial fixed allowlist, which excluded Loki and required updates for new server tools.
 
-No additional MCP server is hosted by Hawkdive or added to Docker Compose.
-OAuth sign-in, token storage, and refresh remain future application responsibilities.
-The first implementation accepts an existing access token from application configuration.
+This replaces the original hosted Cloud MCP decision.
+Hosted MCP requires user OAuth authorization; the supplied service-account token needs the official self-hosted server instead.
+The local server queries Grafana Cloud, so logs and metrics remain in the Cloud stack.
+Its Compose project is separate from the local Grafana verification project.
 Expired or rejected credentials fail the attempt; the worker does not open a browser or refresh credentials.
+Hosted MCP OAuth onboarding remains deferred.
 
 ### Shell sandbox
 
@@ -122,8 +131,8 @@ Disable LangSmith tracing in the worker environment.
 - Separate tool nodes give shell execution and telemetry access distinct responsibilities and future policies.
 - A persistent workspace supports calculations and source analysis across several agent turns.
 - One sandbox per attempt prevents scratchpad state from crossing investigation attempts.
-- Grafana's hosted MCP service avoids another server deployment for the initial Cloud integration.
-- Existing OAuth access tokens let us implement the agent without building onboarding at the same time.
+- The official local MCP server supports the supplied service-account token without implementing OAuth onboarding.
+- A separate caller token protects the local MCP endpoint without sending Grafana credentials as caller authentication.
 - Explicit record tools preserve the evidence chain already defined in ADR 0001.
 - Process supervision owns cleanup because a terminated worker cannot reliably run its own cleanup code.
 
@@ -135,6 +144,12 @@ It rejects print statements outside tests. Tests and test helpers may use print.
 
 Local tests use an MCP test server and a scripted model to exercise the real LangGraph graph.
 The complete suite passed 67 tests; one opt-in Docker test was skipped during this verification.
+After switching to the local MCP server on October 18, 2026, 68 tests passed and one Docker test remained skipped.
+On October 18, 2026, the official MCP container started successfully on localhost port 8001.
+Hawkdive's connection code authenticated and discovered 79 tools, including `query_loki_logs`.
+A live `list_datasources` call retrieved 12 Grafana Cloud datasources, including Loki and Prometheus.
+This verifies MCP transport, caller authentication, and Grafana service-account access to datasource discovery.
+It does not establish working telemetry queries or model inference.
 An HTTP integration test dispatches that graph in a separate process and checks persisted evidence, observations, findings, and outcome.
 Tests also cover output-reference validation, credential boundaries, model-call limits, command timeouts, and bounded command output.
 

@@ -107,14 +107,16 @@ Startup reconciliation, automatic dispatch scheduling, automatic retries, and di
 
 ## HD-004: investigate through Grafana MCP
 
-Status: agent runtime implemented; live verification pending.
+Status: agent runtime implemented; live MCP connectivity verified. Full investigation verification remains pending.
 Dependencies: HD-001, HD-003
 
 Implemented worker wrapper and investigation contracts: [ADR 0001](adrs/0001-investigation-worker-wrapper.md).
 Agent decisions are recorded in [ADR 0002](adrs/0002-langgraph-agent-and-shell-sandbox.md).
-The runtime uses OpenRouter GLM 5.3 and Grafana Cloud hosted MCP, with a Docker sandbox per attempt.
+The runtime uses OpenRouter GLM 5.3 and Grafana's official local MCP server, with a Docker sandbox per attempt.
 Local tests cover graph routing, output references, credential boundaries, and HTTP dispatch through a graph worker process.
-The real sandbox test is opt-in. Docker and provider credentials were unavailable during implementation.
+The real sandbox test is opt-in. Docker and provider credentials were unavailable during initial implementation.
+On October 18, 2026, the local MCP server started and Hawkdive retrieved 12 Cloud datasources through it.
+The server advertised 79 tools, including Loki queries. Live telemetry queries and model inference remain unverified.
 OAuth sign-in/refresh, startup reconciliation, and memory lookup remain deferred.
 
 Keep investigation records separate from alert occurrences.
@@ -126,7 +128,8 @@ Support sequential attempts for an investigation, with at most one active attemp
 Use earlier investigations as history for recurring alerts.
 Grafana is the first integration; the wrapper uses mapped alert signatures for other sources too.
 
-Connect Grafana Cloud hosted MCP with an existing OAuth access token and an explicit read-tool allowlist.
+Connect the official local MCP server with a service-account token and expose all advertised tools.
+Use Grafana permissions to authorize operations; configure read-only access for the initial investigation agent.
 Verify a relevant live metric query, then verify GLM 5.3 gathering evidence through both tool nodes.
 
 Acceptance:

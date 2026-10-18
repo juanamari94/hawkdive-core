@@ -325,7 +325,7 @@ def test_disabled_dispatch_keeps_intake_enabled_without_creating_an_attempt(setu
 
 def test_agent_graph_process_receives_configuration_and_persists_supported_results(setup):
 
-    config = AgentConfig(openrouter_api_key='model-secret', grafana_access_token='mcp-secret',
+    config = AgentConfig(openrouter_api_key='model-secret', grafana_access_token='mcp-secret', grafana_mcp_token='caller-secret',
                          grafana_url='https://example.grafana.net')
     with TestClient(create_app(
         db_path=setup[2] / 'alerts.sqlite3', webhook_token='test-token', agent_config=config,

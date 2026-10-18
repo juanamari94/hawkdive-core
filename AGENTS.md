@@ -7,7 +7,7 @@
 - Use FastAPI with asynchronous I/O boundaries and SQLite for local storage.
 - Investigation records, sequential attempts, structured outputs, and a local process wrapper are implemented.
 - Worker launch is explicit through authenticated API operations. The LangGraph agent is opt-in through HAWKDIVE_AGENT_ENABLED.
-- The agent uses OpenRouter GLM 5.3, Grafana Cloud hosted MCP, and separate GrafanaMcpToolNode and ShellNode paths.
+- The agent uses OpenRouter GLM 5.3, Grafana's official local MCP server, and separate GrafanaMcpToolNode and ShellNode paths.
 - Use one Docker sandbox per attempt. Never pass model or MCP credentials into its environment.
 - Slack, Jira, and Trello interfaces must remain local mocks when added.
 - Follow TASKS.md for subsequent work. Do not add a frontend or telemetry stack before its task begins.
@@ -41,7 +41,8 @@
 - A failed investigation can be explicitly re-triggered. Never overwrite prior attempt outputs.
 - An outcome references saved findings, which reference saved observations from the same attempt.
 - Startup reconciliation, OAuth sign-in/refresh, automatic dispatch, and memory lookup remain deferred.
-- Use existing OAuth access tokens for the initial Grafana Cloud MCP integration.
+- Run the local MCP server with a Grafana service-account token. Authenticate workers with a separate MCP caller token.
+- Expose all advertised MCP tools. Use Grafana permissions to control access; configure read-only access for investigation.
 - Keep execution configuration separate from investigation records and worker command-line arguments.
 - Live provider/Docker checks need credentials and a running engine. Standard tests use a scripted model and MCP test server.
 - New evidence does not automatically queue another investigation.

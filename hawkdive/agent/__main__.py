@@ -28,7 +28,8 @@ async def run(request: WorkerInput, config: AgentConfig) -> None:
                 model = create_model(config)
                 agent = InvestigationAgent(
                     model, grafana_tools, sandbox, emit, max_model_calls=config.max_model_calls,
-                    secrets=(config.openrouter_api_key.get_secret_value(), config.grafana_access_token.get_secret_value()),
+                    secrets=(config.openrouter_api_key.get_secret_value(), config.grafana_access_token.get_secret_value(),
+                             config.grafana_mcp_token.get_secret_value()),
                 )
                 await agent.run(request.trigger)
     finally:

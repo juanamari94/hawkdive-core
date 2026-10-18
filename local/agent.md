@@ -1,6 +1,6 @@
 # Local investigation agent
 
-The worker uses LangGraph, OpenRouter GLM 5.3, Grafana Cloud MCP, and one Docker shell sandbox per attempt.
+The worker uses LangGraph, OpenRouter GLM 5.3, Grafana's official local MCP server, and one Docker shell sandbox per attempt.
 It remains opt-in. Alert intake does not automatically dispatch investigations.
 The architecture is recorded in [ADR 0002](../adrs/0002-langgraph-agent-and-shell-sandbox.md).
 
@@ -26,11 +26,21 @@ Set these application environment variables through your local secret-management
 | `HAWKDIVE_AGENT_ENABLED` | `true` |
 | `OPENROUTER_API_KEY` | OpenRouter API key. |
 | `HAWKDIVE_GRAFANA_URL` | HTTPS root URL of the Grafana Cloud stack, such as `https://example.grafana.net`. |
-| `HAWKDIVE_GRAFANA_ACCESS_TOKEN` | Existing Grafana Cloud MCP OAuth access token. |
+| `HAWKDIVE_GRAFANA_ACCESS_TOKEN` | Grafana service-account token for the stack. |
+| `HAWKDIVE_GRAFANA_MCP_TOKEN` | A separate random secret shared by Hawkdive and the local MCP server. |
+| `HAWKDIVE_WEBHOOK_TOKEN` | A separate secret shared by Hawkdive and the Grafana webhook integration. |
 
-The MCP token is an OAuth access token, not a Grafana service-account token.
+Store these values in an untracked `.env` file in the repository root.
+Run application commands with `uv run --env-file .env` to load that file.
+Docker Compose reads `.env` for its variable substitutions.
+
+The service-account token authenticates the MCP server to Grafana.
+The separate MCP token authenticates Hawkdive to the local server.
 Authorize read access for the intended Cloud stack before configuring it.
-OAuth sign-in and refresh are not implemented here. Replace expired tokens in application configuration and restart the application.
+The agent receives all tools advertised by the MCP server, including Loki tools.
+Hawkdive does not filter tool names. Grafana permissions determine which operations succeed.
+Use read-only permissions for the initial investigation agent.
+Hosted Cloud MCP and its OAuth flow are not used by this setup.
 Do not paste credentials into alert payloads or commit them to the repository.
 
 Remove `HAWKDIVE_WORKER_COMMAND` when using the built-in agent entry point.
@@ -40,6 +50,7 @@ Optional settings:
 
 | Variable | Default |
 | --- | --- |
+| `HAWKDIVE_GRAFANA_MCP_URL` | `http://127.0.0.1:8001/mcp` |
 | `HAWKDIVE_AGENT_MODEL` | `z-ai/glm-5.3` |
 | `HAWKDIVE_AGENT_REASONING_EFFORT` | `max`; GLM 5.3 also supports `low` and `high`. |
 | `HAWKDIVE_SANDBOX_IMAGE` | `hawkdive-sandbox:local` |
@@ -52,12 +63,27 @@ The global investigation window remains independently configured through `HAWKDI
 
 ## Run and dispatch
 
+Start the MCP server from the repository root:
+
+```powershell
+docker compose --env-file .env -f compose.mcp.yaml up -d
+docker compose -f compose.mcp.yaml ps
+```
+
+This separate Compose project runs `grafana/mcp-grafana:2.0.2` against your Cloud stack.
+It does not start the local Grafana verification instance.
+Only localhost port 8001 is published. Hawkdive remains on port 8000.
+All tools advertised by the server are available; the service-account permissions determine which operations succeed.
+The server uses its default tool categories, including Loki and Prometheus.
+Changing credentials requires recreating the server with the same `up -d` command and restarting Hawkdive.
+Do not print `docker compose config` output: its resolved environment contains credentials.
+
 Use a separate database for agent verification:
 
 ```powershell
 $env:HAWKDIVE_DB_PATH = 'local/agent.sqlite3'
-uv run alembic upgrade head
-uv run uvicorn hawkdive.app:app --host 127.0.0.1 --port 8000
+uv run --env-file .env alembic upgrade head
+uv run --env-file .env uvicorn hawkdive.app:app --host 127.0.0.1 --port 8000
 ```
 
 Send an alert from the intended Grafana Cloud stack or replay a fixture with real service labels and timestamps.
@@ -112,3 +138,11 @@ Remove-Item Env:HAWKDIVE_TEST_DOCKER
 
 That test checks persistent files, separate attempt workspaces, and absence of application credentials inside the sandbox.
 Successful Docker tests still do not establish working OpenRouter or Grafana Cloud authentication.
+
+Stop the local MCP server with `docker compose -f compose.mcp.yaml down`.
+
+## References
+
+- [Official MCP Docker setup](https://grafana.com/docs/grafana/latest/developer-resources/mcp/set-up/install-with-docker/)
+- [Service-account authentication](https://grafana.com/docs/grafana/latest/developer-resources/mcp/configure/authentication/)
+- [MCP caller authentication and transport settings](https://grafana.com/docs/grafana/latest/developer-resources/mcp/configure/command-line-flags/)

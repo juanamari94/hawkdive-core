@@ -1,0 +1,19 @@
+name: hawkdive-mcp
+
+services:
+  grafana-mcp:
+    image: grafana/mcp-grafana:2.0.2
+    command:
+      - -t
+      - streamable-http
+      - --address
+      - :8000
+      - --allowed-hosts
+      - 127.0.0.1:8001,localhost:8001
+    ports:
+      - "127.0.0.1:8001:8000"
+    environment:
+      GRAFANA_URL: ${HAWKDIVE_GRAFANA_URL:?Set HAWKDIVE_GRAFANA_URL in .env}
+      GRAFANA_SERVICE_ACCOUNT_TOKEN: ${HAWKDIVE_GRAFANA_ACCESS_TOKEN:?Set HAWKDIVE_GRAFANA_ACCESS_TOKEN in .env}
+      MCP_GRAFANA_SERVER_TOKEN: ${HAWKDIVE_GRAFANA_MCP_TOKEN:?Set HAWKDIVE_GRAFANA_MCP_TOKEN in .env}
+      GRAFANA_USAGE_STATS: disabled

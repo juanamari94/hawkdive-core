@@ -1,5 +1,7 @@
 # Local Grafana verification
 
+To connect an existing Grafana instance, use the [contact-point setup guide](../docs/grafana-contact-point.md).
+
 This setup runs Grafana with one Hawkdive webhook integration in a contact point.
 Hawkdive runs on the Windows host.
 Hawkdive uses a separate verification database.

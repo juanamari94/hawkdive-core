@@ -13,6 +13,8 @@ class AgentConfig(BaseModel):
 
     openrouter_api_key: SecretStr = Field(exclude=True, repr=False)
     grafana_access_token: SecretStr = Field(exclude=True, repr=False)
+    grafana_mcp_token: SecretStr = Field(exclude=True, repr=False)
+    grafana_mcp_url: str = 'http://127.0.0.1:8001/mcp'
     grafana_url: str
     model: str = 'z-ai/glm-5.3'
     reasoning_effort: Literal['low', 'high', 'max'] = 'max'
@@ -30,7 +32,7 @@ class AgentConfig(BaseModel):
             raise ValueError('Configure the HTTPS root URL of a Grafana Cloud stack')
         return value.rstrip('/')
 
-    @field_validator('openrouter_api_key', 'grafana_access_token')
+    @field_validator('openrouter_api_key', 'grafana_access_token', 'grafana_mcp_token')
     @classmethod
     def require_secret(cls, value: SecretStr) -> SecretStr:
         if not value.get_secret_value().strip():
@@ -50,6 +52,8 @@ class AgentConfig(BaseModel):
         return cls(
             openrouter_api_key=environment.get('OPENROUTER_API_KEY', ''),
             grafana_access_token=environment.get('HAWKDIVE_GRAFANA_ACCESS_TOKEN', ''),
+            grafana_mcp_token=environment.get('HAWKDIVE_GRAFANA_MCP_TOKEN', ''),
+            grafana_mcp_url=environment.get('HAWKDIVE_GRAFANA_MCP_URL', 'http://127.0.0.1:8001/mcp'),
             grafana_url=environment.get('HAWKDIVE_GRAFANA_URL', ''),
             model=environment.get('HAWKDIVE_AGENT_MODEL', 'z-ai/glm-5.3'),
             reasoning_effort=environment.get('HAWKDIVE_AGENT_REASONING_EFFORT', 'max'),
@@ -63,6 +67,8 @@ class AgentConfig(BaseModel):
         return {
             'OPENROUTER_API_KEY': self.openrouter_api_key.get_secret_value(),
             'HAWKDIVE_GRAFANA_ACCESS_TOKEN': self.grafana_access_token.get_secret_value(),
+            'HAWKDIVE_GRAFANA_MCP_TOKEN': self.grafana_mcp_token.get_secret_value(),
+            'HAWKDIVE_GRAFANA_MCP_URL': self.grafana_mcp_url,
             'HAWKDIVE_GRAFANA_URL': self.grafana_url,
             'HAWKDIVE_AGENT_MODEL': self.model,
             'HAWKDIVE_AGENT_REASONING_EFFORT': self.reasoning_effort,
